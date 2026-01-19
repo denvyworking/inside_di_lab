@@ -28,9 +28,3 @@ func (l *Logger) Log(msg string) {
 		fmt.Println(l.formatter.Format(msg))
 	}
 }
-
-type LoggerInterface interface {
-	Log(msg string)
-}
-
-var _ LoggerInterface = (*Logger)(nil) // компилятор проверит соответствие

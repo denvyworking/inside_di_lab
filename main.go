@@ -19,10 +19,9 @@ func NewApp(logger services.LoggerInterface) *App {
 
 func (a *App) Run() {
 	a.logger.Log("Application started!")
-	a.logger.Log("Dependency Injection works with dynamic constructor arity!")
+	a.logger.Log("Dependency Injection works with dynamic constructor!")
 }
 
-// Обёртки, возвращающие интерфейс
 func NewLoggerAsInterface(cfg *services.Config, fmt *services.Formatter) services.LoggerInterface {
 	return services.NewLogger(cfg, fmt)
 }
@@ -56,9 +55,9 @@ func NewServiceB(a *ServiceA) *ServiceB {
 
 // func main() {
 // 	fmt.Println("Выберите режим:")
-// 	fmt.Println("1 — Обычный Logger (2 зависимости)")
-// 	fmt.Println("2 — AdvancedLogger (3 зависимости)")
-// 	fmt.Println("3 — Проверка циклической зависимости")
+// 	fmt.Println("1 - Обычный Logger (2 зависимости)")
+// 	fmt.Println("2 - AdvancedLogger (3 зависимости)")
+// 	fmt.Println("3 - Проверка циклической зависимости")
 // 	fmt.Print("Ваш выбор (1, 2 или 3): ")
 
 // 	reader := bufio.NewReader(os.Stdin)
@@ -140,16 +139,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = container.Register(services.NewLogger)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = container.Register(services.NewAdvancedLogger)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	for {
 		fmt.Println("\nВыберите действие:")
 		fmt.Println("1 — Создать обычный Logger (2 зависимости)")
@@ -163,7 +152,11 @@ func main() {
 
 		switch input[0] {
 		case '1':
-			fmt.Println("\n🔧 Запрашиваем *Logger...")
+			fmt.Println("\n Запрашиваем *Logger...")
+			err = container.Register(services.NewLogger)
+			if err != nil {
+				log.Fatal(err)
+			}
 			var logger *services.Logger
 			err := container.Resolve(&logger)
 			if err != nil {
@@ -172,7 +165,12 @@ func main() {
 			logger.Log("Привет от обычного Logger!")
 
 		case '2':
-			fmt.Println("\n🔧 Запрашиваем *AdvancedLogger...")
+			fmt.Println("\n Запрашиваем *AdvancedLogger...")
+
+			err = container.Register(services.NewAdvancedLogger)
+			if err != nil {
+				log.Fatal(err)
+			}
 			var logger *services.AdvancedLogger
 			err := container.Resolve(&logger)
 			if err != nil {

@@ -8,7 +8,7 @@ type AdvancedLogger struct {
 	timeProvider *TimeProvider
 }
 
-// NewAdvancedLogger — конструктор с ТРЕМЯ параметрами!
+// NewAdvancedLogger - конструктор с 3 параметрами
 func NewAdvancedLogger(cfg *Config, fmt *Formatter, tp *TimeProvider) *AdvancedLogger {
 	return &AdvancedLogger{
 		config:       cfg,
@@ -24,5 +24,3 @@ func (l *AdvancedLogger) Log(msg string) {
 		fmt.Println(output)
 	}
 }
-
-var _ LoggerInterface = (*AdvancedLogger)(nil)

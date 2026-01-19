@@ -7,10 +7,10 @@ import (
 	"strings"
 )
 
-// var x int = 42
-
-// t := reflect.TypeOf(x)   // Type: int
-// v := reflect.ValueOf(x)  // Value: 42
+/*  var x int = 42
+t := reflect.TypeOf(x)   // Type: int
+v := reflect.ValueOf(x)  // Value: 42
+*/
 
 type registration struct {
 	constructor reflect.Value
@@ -55,11 +55,9 @@ func (c *Container) Resolve(target interface{}) error {
 
 	desiredType := targetValue.Type().Elem()
 
-	// Создаём пустой стек для отслеживания циклов
-	visited := make(map[reflect.Type]bool)
 	path := []reflect.Type{} // порядок важен для сообщения об ошибке
 
-	instance, err := c.resolveType(desiredType, visited, path)
+	instance, err := c.resolveType(desiredType, path)
 	if err != nil {
 		return err
 	}
@@ -71,20 +69,19 @@ func (c *Container) Resolve(target interface{}) error {
 // resolveType рекурсивно разрешает зависимости с защитой от циклов.
 func (c *Container) resolveType(
 	t reflect.Type,
-	visited map[reflect.Type]bool,
 	path []reflect.Type,
 ) (reflect.Value, error) {
 	// Проверка на цикл: если тип уже в текущем пути — ошибка
 	for _, p := range path {
+		// наглядная обработка результата
 		if p == t {
-			// Формируем читаемое сообщение: A → B → A
 			var names []string
 			for _, pt := range path {
 				names = append(names, pt.String())
 			}
 			names = append(names, t.String()) // замыкаем цикл
 			return reflect.Value{}, fmt.Errorf("circular dependency detected: %s",
-				strings.Join(names, " → "))
+				strings.Join(names, " -> "))
 		}
 	}
 
@@ -100,9 +97,9 @@ func (c *Container) resolveType(
 		return reflect.Value{}, fmt.Errorf("no constructor registered for type %v", t)
 	}
 
-	constructor := reg.constructor
-	funcType := constructor.Type()
-	numIn := funcType.NumIn()
+	constructor := reg.constructor // метод для нашего конструктора
+	funcType := constructor.Type() // вся инфа о типе
+	numIn := funcType.NumIn()      // кол-во зависимостей
 
 	// Добавляем текущий тип в путь
 	newPath := append(path, t)
@@ -111,7 +108,7 @@ func (c *Container) resolveType(
 	args := make([]reflect.Value, numIn)
 	for i := 0; i < numIn; i++ {
 		argType := funcType.In(i)
-		argValue, err := c.resolveType(argType, visited, newPath)
+		argValue, err := c.resolveType(argType, newPath)
 		if err != nil {
 			return reflect.Value{}, fmt.Errorf("failed to resolve dependency %v for %v: %w", argType, t, err)
 		}
@@ -120,6 +117,9 @@ func (c *Container) resolveType(
 
 	// Создаём новый экземпляр
 	fmt.Printf("🛠️  Creating new instance of %v...\n", t)
+	// constructor.Call(args) — вызов функции через рефлексию.
+	// В Go функция может возвращать несколько значений, поэтому Call возвращает срез []reflect.Value.
+	// Но твой конструктор возвращает один объект → results[0].
 	results := constructor.Call(args)
 	instance := results[0]
 
