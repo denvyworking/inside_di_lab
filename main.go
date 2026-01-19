@@ -144,7 +144,8 @@ func main() {
 		fmt.Println("1 — Создать обычный Logger (2 зависимости)")
 		fmt.Println("2 — Создать AdvancedLogger (3 зависимости)")
 		fmt.Println("3 — Проверить циклическую зависимость")
-		fmt.Println("4 — Выход")
+		fmt.Println("4 — Очистить кэш DI-контейнера")
+		fmt.Println("0 — Выход")
 		fmt.Print("Ваш выбор: ")
 
 		reader := bufio.NewReader(os.Stdin)
@@ -162,7 +163,7 @@ func main() {
 			if err != nil {
 				log.Fatal("Ошибка:", err)
 			}
-			logger.Log("Привет от обычного Logger!")
+			logger.Log("Привет от Logger!")
 
 		case '2':
 			fmt.Println("\n Запрашиваем *AdvancedLogger...")
@@ -188,8 +189,10 @@ func main() {
 			if err != nil {
 				fmt.Printf("✅ Цикл обнаружен: %v\n", err)
 			}
-
 		case '4':
+			container.ClearCache()
+
+		case '0':
 			fmt.Println("👋")
 			return
 

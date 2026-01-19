@@ -129,3 +129,8 @@ func (c *Container) resolveType(
 
 	return instance, nil
 }
+
+func (c *Container) ClearCache() {
+	c.instances = make(map[reflect.Type]reflect.Value)
+	fmt.Println("🧹 Кэш DI-контейнера очищен.")
+}
