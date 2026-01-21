@@ -12,13 +12,25 @@ t := reflect.TypeOf(x)   // Type: int
 v := reflect.ValueOf(x)  // Value: 42
 */
 
+// reflect.Value - это специальный контейнер, который позволяет
+// вскрыть любое значение и работать с ним динамически.
+/*
+Он знает:
+
+Какой у значения тип,
+Какое у него значение,
+Как его прочитать, изменить или (если это функция) вызвать.
+*/
+
 type registration struct {
 	constructor reflect.Value
 }
 
 type Container struct {
+	// хранит рецепт - способ создания (функция)
 	registrations map[reflect.Type]registration
-	instances     map[reflect.Type]reflect.Value // кэш для singleton
+	// хранит уже готовый экземпляр (обьект)
+	instances map[reflect.Type]reflect.Value // кэш для singleton
 }
 
 func NewContainer() *Container {
@@ -53,6 +65,7 @@ func (c *Container) Resolve(target interface{}) error {
 		return errors.New("target must be a pointer")
 	}
 
+	// разыменование указателя (переается всегда указатель на тип)
 	desiredType := targetValue.Type().Elem()
 
 	path := []reflect.Type{} // порядок важен для сообщения об ошибке
@@ -61,7 +74,7 @@ func (c *Container) Resolve(target interface{}) error {
 	if err != nil {
 		return err
 	}
-
+	// устанавливаем тип. Конечный этап работы DI
 	targetValue.Elem().Set(instance)
 	return nil
 }
@@ -85,9 +98,9 @@ func (c *Container) resolveType(
 		}
 	}
 
-	// Singleton: если уже создан — возвращаем
+	// Singleton: если уже создан - возвращаем
 	if instance, exists := c.instances[t]; exists {
-		fmt.Printf("🔁 Reusing existing instance of %v\n", t)
+		fmt.Printf("Reusing existing instance of %v\n", t)
 		return instance, nil
 	}
 
@@ -97,8 +110,10 @@ func (c *Container) resolveType(
 		return reflect.Value{}, fmt.Errorf("no constructor registered for type %v", t)
 	}
 
-	constructor := reg.constructor // метод для нашего конструктора
-	funcType := constructor.Type() // вся инфа о типе
+	constructor := reg.constructor // метод нашего конструктора
+	// logger (config и formatter)
+	// !!!  funcType = func (cfg *Config, fmt *Formatter) *logger  !!!
+	funcType := constructor.Type() // вся инфа о типе параметров конструктора
 	numIn := funcType.NumIn()      // кол-во зависимостей
 
 	// Добавляем текущий тип в путь
@@ -116,21 +131,23 @@ func (c *Container) resolveType(
 	}
 
 	// Создаём новый экземпляр
-	fmt.Printf("🛠️  Creating new instance of %v...\n", t)
+	fmt.Printf("Creating new instance of %v...\n", t)
+
 	// constructor.Call(args) — вызов функции через рефлексию.
 	// В Go функция может возвращать несколько значений, поэтому Call возвращает срез []reflect.Value.
-	// Но твой конструктор возвращает один объект → results[0].
+	// Но конструктор возвращает один объект -> results[0].
+
 	results := constructor.Call(args)
 	instance := results[0]
 
 	// Кэшируем (singleton)
 	c.instances[t] = instance
-	fmt.Printf("✅ Created %v\n", t)
+	fmt.Printf("Created %v\n", t)
 
 	return instance, nil
 }
 
 func (c *Container) ClearCache() {
 	c.instances = make(map[reflect.Type]reflect.Value)
-	fmt.Println("🧹 Кэш DI-контейнера очищен.")
+	fmt.Println("Кэш DI-контейнера очищен.")
 }
